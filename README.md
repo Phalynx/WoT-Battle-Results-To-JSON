@@ -1,4 +1,4 @@
-WoT-BattleResult-To-JSON 
+WoT-Battle-Results-To-JSON 
 ------------------------------------
 Version 9.1 / wotbr2j.pyc
 
@@ -17,8 +17,15 @@ Please respect my work invested in this project. You have to give me credit on y
 ## Supported Versions
 	* WoT 0.8.0 up to WoT 0.9.1
 	
-## Python
-	* You need Python 2.7
+## Requirements
+
+### Tank and Map definitions
+For parsing of the most current Tanks and Maps you will need tanks.jsonand maps.json from my WoT-Dossier-Cache-to-JSON repository
+* tanks.json https://github.com/Phalynx/WoT-Dossier-Cache-to-JSON/blob/master/tanks.json
+* maps.json https://github.com/Phalynx/WoT-Dossier-Cache-to-JSON/blob/master/maps.json
+
+### Python
+* You need Python 2.7, or just use the compiled version wotbr2j.exe
 
 ## Usage
 	wotbr2j.pyc <battleresult.dat>
