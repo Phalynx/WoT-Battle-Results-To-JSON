@@ -128,7 +128,7 @@ def main():
 	  
 	bresult['personal']['won'] = True if bresult['common']['winnerTeam'] == bresult['personal']['team'] else False
 	bresult['personal']['achievementlist'] = list()
-	  
+	import DamageEvents	  
 
 	for key, value in bresult['vehicles'].items(): 
 
@@ -143,11 +143,22 @@ def main():
 				bresult['vehicles'][key]['details'][vehicleid]['critsCriticalDevicesList'] = getCriticalDevicesList(detail_values)
 				bresult['vehicles'][key]['details'][vehicleid]['critsDestroyedDevicesList'] = getDestroyedDevicesList(detail_values)
 				bresult['vehicles'][key]['details'][vehicleid]['critsCount'] = len(bresult['vehicles'][key]['details'][vehicleid]['critsDestroyedTankmenList']) + len(bresult['vehicles'][key]['details'][vehicleid]['critsDestroyedTankmenList']) + len(bresult['vehicles'][key]['details'][vehicleid]['critsDestroyedTankmenList'])
-	      
+
+		bresult['vehicles'][key]['damage_events'] = []
 		if 'damage_event_list' in bresult['vehicles'][key]:
-			bresult['vehicles'][key]['damage_event_list'] = None
-					
-		  
+			for dmg_list in bresult['vehicles'][key]['damage_event_list']:
+				dmg_vehicleid, dmg_typecomp = dmg_list
+				for x in bresult['vehicles'][key]['damage_event_list'][dmg_list]:
+					dmg = dict(zip(x._fields, list(x))) 
+					dmg['typeComp'] = dmg_typecomp
+					dmg['tankID'] = dmg_typecomp >> 8 & 65535
+					dmg['countryID'] = dmg_typecomp >> 4 & 15
+					dmg['vehicleid'] = dmg_vehicleid
+
+					bresult['vehicles'][key]['damage_events'].append(dmg)
+
+			del(bresult['vehicles'][key]['damage_event_list'])
+
 		tanksource = bresult['vehicles'][key]['typeCompDescr'] 
 		  
 		if tanksource == None: 
@@ -245,7 +256,9 @@ def listToDict(names, l):
 def print_array(oarray):
 	print json.dumps(oarray, sort_keys=True, indent=4)
 
-  
+from collections import namedtuple
+def convertDictToNamedTuple(dictionary):
+    return namedtuple('GenericDict', dictionary.keys())(**dictionary)
   
   
 def convertToFullForm(compactForm): 
