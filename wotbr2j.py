@@ -252,15 +252,12 @@ def listToDict(names, l):
         d[x[1]] = l[x[0]] 
   
     return d 
-  
+
+	
 def print_array(oarray):
 	print json.dumps(oarray, sort_keys=True, indent=4)
 
-from collections import namedtuple
-def convertDictToNamedTuple(dictionary):
-    return namedtuple('GenericDict', dictionary.keys())(**dictionary)
-  
-  
+
 def convertToFullForm(compactForm): 
 	
 	handled = 0
