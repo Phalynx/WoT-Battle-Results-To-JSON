@@ -5,7 +5,7 @@
 import struct, json, time, sys, os 
 from itertools import izip 
   
-BONUS_TYPE_NAMES = ('regular', 'training', 'company', 'tournament', 'clan', 'tutorial', 'cybersport', 'historical', 'event_battles', 'sortie', 'fort_battle') 
+BONUS_TYPE_NAMES = ('regular', 'training', 'company', 'tournament', 'clan', 'tutorial', 'cybersport', 'historical', 'event_battles', 'sortie', 'fort_battle', 'rated_cybersport') 
 FINISH_REASON_NAMES = ('extermination', 'base', 'timeout', 'failure', 'technical') 
 
 VERSIONS_LENGTH = (50, 52, 60, 62, 68, 70, 74, 81, 84, 92, 117, 90, 89, 91)
@@ -60,7 +60,7 @@ def main():
 	import struct, json, time, sys, os, shutil, datetime 
 	global numofkills, filename_source, filename_target, option_server, option_format 
 
-	parserversion = "0.9.7.0"
+	parserversion = "0.9.7.1"
 
 	option_raw = 0
 	option_format = 0
