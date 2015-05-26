@@ -119,8 +119,7 @@ def main():
 
 	# 0.9.8 and higher
 	if len(list(bresult['personal'].keys()))<10:
-		personaldata = bresult['personal']
-		for vehTypeCompDescr, ownResults in personaldata.iteritems():
+		for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
 			ownResults['details'] = handleDetailsCrits(ownResults['details'])
 			bresult['personal'][vehTypeCompDescr] = ownResults
 			
@@ -145,6 +144,34 @@ def main():
 	printmessage('', 0) 
 	sys.exit(0) 
 
+def prepareForJSON(bresult):
+	if 'personal' in bresult:
+
+		if 'club' in bresult['personal']:	
+			if 'clubDossierPopUps' in bresult['personal']['club']:
+				oldClubDossier = bresult['personal']['club']['clubDossierPopUps'].copy()
+				bresult['personal']['club']['clubDossierPopUps'] = dict()
+				for achievement, amount in oldClubDossier.iteritems():
+					bresult['personal']['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
+		
+		if bresult['parser']['battleresultversion'] >= 15:
+			for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
+				if 'details' in ownResults:
+					newdetails = detailsDictToString(ownResults['details'])
+					bresult['personal'][vehTypeCompDescr]['details'] = newdetails
+	
+	return bresult
+			
+def detailsDictToString(mydict):
+	mydictcopy = dict()
+	for key, value in mydict.iteritems():
+		value['vehicleid'] = key[0]
+		value['typeCompDescr'] = key[1]
+		mydictcopy[str(key[0]) + '-' + str(key[1])] = value
+
+	return mydictcopy
+	
+	
 	
 def exitwitherror(message): 
 	global parser
@@ -158,7 +185,8 @@ def exitwitherror(message):
   
 def dumpjson(bresult): 
 	global option_server, option_format, filename_target
-
+	bresult = prepareForJSON(bresult)
+	
 	try:
 		if option_server == 1: 
 			print json.dumps(bresult)    
@@ -192,6 +220,8 @@ def listToDict(names, l):
 def print_array(oarray):
 	print json.dumps(oarray, sort_keys=True, indent=4)
 
+
+	
 def convertToFullForm(compactForm, battleresultversion): 
 	from SafeUnpickler import SafeUnpickler
 	
@@ -217,15 +247,7 @@ def convertToFullForm(compactForm, battleresultversion):
 				for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
 					vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
 					
-					vehPersonal['details_pre'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
-					vehPersonal['details'] = {}
-					for key, value in vehPersonal['details_pre'].iteritems():
-						value['vehicleid'] = key[0]
-						value['typeCompDescr'] = key[1]
-						vehPersonal['details'][str(key[0]) + '-' + str(key[1])] = value
-					del vehPersonal['details_pre']
-					
-					vehPersonal = keepCompatibility(vehPersonal)
+					vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
 							
 				commonAsList, playersAsList, vehiclesAsList = SafeUnpickler.loads(zlib.decompress(pickled))
 				fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
@@ -248,8 +270,6 @@ def convertToFullForm(compactForm, battleresultversion):
 				 'common': {}, 
 				 'players': {}, 
 				 'vehicles': {}}
-				
-				fullForm['personal'] = keepCompatibility(fullForm['personal'])
 
 			except Exception, e: 
 				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleresultversion) + " Error: " + str(e))
@@ -322,35 +342,6 @@ def getDestroyedDevicesList(detail_values):
 	return destroyedDevicesList 
  
 ############################################################################################################################ 
-def keepCompatibility(structureddata):
-
-	# Compatibility with older versions
-	# Some names changed in WoT 0.9.0
-		
-	if 'directHits' in structureddata:
-		structureddata['hits'] = structureddata['directHits']
-		
-	if 'explosionHits' in structureddata:
-		structureddata['he_hits'] = structureddata['explosionHits']
-		
-	if 'piercings' in structureddata:
-		structureddata['pierced'] = structureddata['piercings']
-				
-	if 'piercingsReceived' in structureddata:
-		structureddata['piercedReceived'] = structureddata['piercingsReceived']
-				
-	if 'explosionHitsReceived' in structureddata:
-		structureddata['heHitsReceived'] = structureddata['explosionHitsReceived']
-		
-	if 'directHitsReceived' in structureddata:
-		structureddata['shotsReceived'] = structureddata['directHitsReceived']
-		
-	if 'noDamageDirectHitsReceived' in structureddata:
-		structureddata['noDamageShotsReceived'] = structureddata['noDamageDirectHitsReceived']
-		
-
-	return structureddata
-
   
 def printmessage(logtext, to_log): 
 	import datetime, os 
