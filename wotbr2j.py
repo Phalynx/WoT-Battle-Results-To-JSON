@@ -47,7 +47,7 @@ VEH_INTERACTION_DETAILS_INDICES = dict(((x[1][0], x[0]) for x in enumerate(VEH_I
 parser = dict()
 parser['version'] = "0.9.8.0"
 parser['name'] = 'http://www.vbaddict.net'
-parser['processing_time'] = int(time.mktime(time.localtime()))
+parser['processingTime'] = int(time.mktime(time.localtime()))
   
 def usage(): 
     print str(sys.argv[0]) + " battleresult.dat [options]"
@@ -94,7 +94,7 @@ def main():
 			  
 	try: 
 		from SafeUnpickler import SafeUnpickler
-		legacy_battleresultversion, battleResults = SafeUnpickler.load(cachefile) 
+		legacyBattleResultVersion, battleResults = SafeUnpickler.load(cachefile) 
 	except Exception, e: 
 		exitwitherror('Battle Result cannot be read (pickle could not be read) ' + e.message) 
 
@@ -103,16 +103,16 @@ def main():
 
 	if len(battleResults[1])<=117:
 		if len(battleResults[1]) in LEGACY_VERSIONS_LENGTH:
-			parser['battleresultversion'] = LEGACY_VERSIONS[len(battleResults[1])]
+			parser['battleResultVersion'] = LEGACY_VERSIONS[len(battleResults[1])]
 		else:
 			exitwitherror("Unknown Version, length: " + str(len(battleResults[1])))
 	else:
 		# Updates higher than v0.9.8 have to be identified using a list of new fields
-		parser['battleresultversion'] = 15
+		parser['battleResultVersion'] = 15
 			
-	printmessage("Processing Version: " + str(parser['battleresultversion']), 0)
+	printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
 	  
-	bresult = convertToFullForm(battleResults, parser['battleresultversion']) 
+	bresult = convertToFullForm(battleResults, parser['battleResultVersion']) 
 
 	if not 'personal' in bresult:
 		exitwitherror('Battle Result cannot be read (personal does not exist)')
@@ -154,7 +154,7 @@ def prepareForJSON(bresult):
 				for achievement, amount in oldClubDossier.iteritems():
 					bresult['personal']['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
 		
-		if bresult['parser']['battleresultversion'] >= 15:
+		if bresult['parser']['battleResultVersion'] >= 15:
 			for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
 				if 'details' in ownResults:
 					newdetails = detailsDictToString(ownResults['details'])
@@ -222,17 +222,17 @@ def print_array(oarray):
 
 
 	
-def convertToFullForm(compactForm, battleresultversion): 
+def convertToFullForm(compactForm, battleResultVersion): 
 	from SafeUnpickler import SafeUnpickler
 	
 	handled = 0
 	import importlib
-	battle_results_data = importlib.import_module('battle_results_shared_' + str(battleresultversion).zfill(2))
+	battle_results_data = importlib.import_module('battle_results_shared_' + str(battleResultVersion).zfill(2))
 
 	if len(battle_results_data.VEH_FULL_RESULTS)==0:
-		exitwitherror("Unsupported Battle Result Version: " + str(battleresultversion))
+		exitwitherror("Unsupported Battle Result Version: " + str(battleResultVersion))
 	else:
-		if battleresultversion >= 15:  
+		if battleResultVersion >= 15:  
 
 			arenaUniqueID, fullResultsList, pickled, uniqueSubUrl = compactForm
 			fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
@@ -261,7 +261,7 @@ def convertToFullForm(compactForm, battleresultversion):
 						fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
 						
 			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleresultversion) + " Error: " + str(e))
+				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
 		else:	
 			fullForm = dict()
 			try:
@@ -272,7 +272,7 @@ def convertToFullForm(compactForm, battleresultversion):
 				 'vehicles': {}}
 
 			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleresultversion) + " Error: " + str(e))
+				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
 		
 			if not 'personal' in fullForm:
 				return fullForm
@@ -280,7 +280,7 @@ def convertToFullForm(compactForm, battleresultversion):
 			try:
 				commonAsList, playersAsList, vehiclesAsList = SafeUnpickler.loads(compactForm[2]) 
 			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleresultversion) + " Error: " + str(e))
+				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
 			
 			fullForm['common'] = listToDict(battle_results_data.COMMON_RESULTS, commonAsList) 
 			
