@@ -289,7 +289,6 @@ def convertToFullForm(compactForm, battleresultversion):
 			  
 			for vehicleID, vehicleAsList in vehiclesAsList.iteritems(): 
 				fullForm['vehicles'][vehicleID] = listToDict(battle_results_data.VEH_PUBLIC_RESULTS, vehicleAsList)
-				fullForm['vehicles'][vehicleID] = keepCompatibility(fullForm['vehicles'][vehicleID])
 	  
 	return fullForm 
 
