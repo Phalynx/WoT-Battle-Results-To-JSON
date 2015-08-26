@@ -45,7 +45,7 @@ VEH_INTERACTION_DETAILS_INDICES = dict(((x[1][0], x[0]) for x in enumerate(VEH_I
   
   
 parser = dict()
-parser['version'] = "0.9.9.0"
+parser['version'] = "0.9.10.0"
 parser['name'] = 'http://www.vbaddict.net'
 parser['processingTime'] = int(time.mktime(time.localtime()))
   
@@ -105,16 +105,16 @@ def main():
 		parser['battleResultVersion'] = LEGACY_VERSIONS[len(battleResults[1])]
 	else:
 	# Updates higher than v0.9.8 have to be identified using a list of new fields
-		parser['battleResultVersion'] = 16
+		parser['battleResultVersion'] = 17
 			
 	while parser['battleResultVersion']>0:
 		printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
 		issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion']) 
-		
 		if issuccess==0:
-			printmessage("Iteration", str(parser['battleResultVersion']-1))
-			issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion']-1) 
-		break
+			parser['battleResultVersion'] = parser['battleResultVersion']-1
+		else:
+			break
+		
 
 	if not 'personal' in bresult:
 		exitwitherror('Battle Result cannot be read (personal does not exist)')
