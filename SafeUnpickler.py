@@ -7,7 +7,7 @@ import StringIO
 # Thanks to http://nadiaspot.com/why-python-pickle-is-insecure/
 
 class SafeUnpickler(object):
-	PICKLE_SAFE = {'DamageEvents', 'collections'}
+	PICKLE_SAFE = {'DamageEvents', 'collections', '__builtin__'}
 
 	@classmethod
 	def find_class(cls, module, name):

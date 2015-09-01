@@ -45,7 +45,7 @@ VEH_INTERACTION_DETAILS_INDICES = dict(((x[1][0], x[0]) for x in enumerate(VEH_I
   
   
 parser = dict()
-parser['version'] = "0.9.10.0"
+parser['version'] = "0.9.10.1"
 parser['name'] = 'http://www.vbaddict.net'
 parser['processingTime'] = int(time.mktime(time.localtime()))
   
@@ -122,7 +122,12 @@ def main():
 	# 0.9.8 and higher
 	if len(list(bresult['personal'].keys()))<10:
 		for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
-			ownResults['details'] = handleDetailsCrits(ownResults['details'])
+			if 'details' in ownResults:
+				ownResults['details'] = handleDetailsCrits(ownResults['details'])
+				
+			for field in ('damageEventList', 'xpReplay', 'creditsReplay', 'tmenXPReplay', 'fortResourceReplay', 'goldReplay', 'freeXPReplay'):
+				ownResults[field] = None
+				
 			bresult['personal'][vehTypeCompDescr] = ownResults
 			
 	# <0.9.8
@@ -166,7 +171,8 @@ def prepareForJSON(bresult):
 							bresult['personal'][vehTypeCompDescr]['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
 		
 			if len(bresult['personal'].copy())>1 and len(bresult['personal'].copy())<10 :
-				printmessage("Version 15 DOUBLE: " + str(bresult['arenaUniqueID']), 1)
+				#printmessage("Version 15 DOUBLE: " + str(bresult['arenaUniqueID']), 1)
+				pass
 			for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
 				if 'details' in ownResults:
 					newdetails = detailsDictToString(ownResults['details'])
@@ -198,8 +204,7 @@ def exitwitherror(message):
 def dumpjson(bresult): 
 	global option_server, option_format, filename_target
 	bresult = prepareForJSON(bresult)
-	
-	
+
 	try:
 		if option_server == 1: 
 			print json.dumps(bresult)    
@@ -245,7 +250,47 @@ def convertToFullForm(compactForm, battleResultVersion):
 	if len(battle_results_data.VEH_FULL_RESULTS)==0:
 		exitwitherror("Unsupported Battle Result Version: " + str(battleResultVersion))
 	else:
-		if battleResultVersion >= 15:  
+	
+		if battleResultVersion >= 17:  
+
+			arenaUniqueID, avatarResults, fullResultsList, pickled = compactForm
+			fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
+			avatarResults = SafeUnpickler.loads(zlib.decompress(avatarResults))
+			personal = {}
+			try:
+				fullForm = {'arenaUniqueID': arenaUniqueID,
+				'personal': personal,
+				'common': {},
+				'players': {},
+				'vehicles': {},
+				'avatars': {}}
+				personal['avatar'] = avatarResults = battle_results_data.AVATAR_FULL_RESULTS.unpack(avatarResults)
+				for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
+					vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
+					vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
+					vehPersonal['isPrematureLeave'] = avatarResults['isPrematureLeave']
+					vehPersonal['fairplayViolations'] = avatarResults['fairplayViolations']
+
+				commonAsList, playersAsList, vehiclesAsList, avatarsAsList = SafeUnpickler.loads(zlib.decompress(pickled))
+				fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
+				for accountDBID, playerAsList in playersAsList.iteritems():
+					fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
+
+				for accountDBID, avatarAsList in avatarsAsList.iteritems():
+					fullForm['avatars'][accountDBID] = battle_results_data.AVATAR_PUBLIC_RESULTS.unpack(avatarAsList)
+
+				for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
+					fullForm['vehicles'][vehicleID] = []
+				for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
+					fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
+			except IndexError, i:
+				return 0, {}
+			except KeyError, i:
+				return 0, {}
+			except Exception, e: 
+				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
+				
+		elif battleResultVersion >= 15:  
 
 			arenaUniqueID, fullResultsList, pickled, uniqueSubUrl = compactForm
 			fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
@@ -257,6 +302,7 @@ def convertToFullForm(compactForm, battleResultVersion):
 					'players': {},
 					'vehicles': {},
 					'uniqueSubUrl': uniqueSubUrl}
+					
 				for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
 					vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
 					
@@ -272,7 +318,7 @@ def convertToFullForm(compactForm, battleResultVersion):
 					fullForm['vehicles'][vehicleID] = []
 					for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
 						fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
-						
+							
 			except IndexError, i:
 				return 0, {}
 			except Exception, e: 
