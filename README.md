@@ -1,6 +1,6 @@
 WoT-Battle-Results-To-JSON 
 ------------------------------------
-Version 9.10 / wotbr2j.pyc
+Version 9.12 / wotbr2j.pyc
 
 * Author: Marius Czyz aka Phalynx
 * Contact: marius.czyz@gmail.com
@@ -15,7 +15,7 @@ Version 9.10 / wotbr2j.pyc
 Please respect my work invested in this project. You have to give me credit on your application or website.
 
 ## Supported Versions
-	* WoT 0.8.0 up to WoT 0.9.10
+	* WoT 0.8.0 up to WoT 0.9.12
 	
 ## Requirements
 
