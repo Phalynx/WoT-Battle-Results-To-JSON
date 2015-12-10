@@ -97,7 +97,10 @@ def main():
         exitwitherror('Battle Result does not exists!')
 
     file = open(filename_source, 'rb')
-    bresult = process(file)
+    try:
+        bresult = process(file)
+    except Exception as e:
+        exitwitherror(e.message)
     dumpjson(bresult)
 
     logging.info('###### Done!')
@@ -108,10 +111,10 @@ def process(file):
         from SafeUnpickler import SafeUnpickler
         legacyBattleResultVersion, battleResults = SafeUnpickler.load(file)
     except Exception, e:
-        exitwitherror('Battle Result cannot be read (pickle could not be read) ' + e.message)
+        raise Exception('Battle Result cannot be read (pickle could not be read) ' + e.message)
 
     if not 'battleResults' in locals():
-        exitwitherror('Battle Result cannot be read (battleResults does not exist)')
+        raise Exception('Battle Result cannot be read (battleResults does not exist)')
 
     # if len(battleResults[1]) in LEGACY_VERSIONS_LENGTH:
         # parser['battleResultVersion'] = LEGACY_VERSIONS[len(battleResults[1])]
@@ -129,7 +132,7 @@ def process(file):
 
 
     if not 'personal' in bresult:
-        exitwitherror('Battle Result cannot be read (personal does not exist)')
+        raise Exception('Battle Result cannot be read (personal does not exist)')
 
     # 0.9.8 and higher
     if len(list(bresult['personal'].keys()))<10:
