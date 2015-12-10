@@ -65,13 +65,13 @@ def main():
 	option_format = 0
 	option_server = 0
 	option_frags = 1
-			  
-	if len(sys.argv) == 1: 
-		usage() 
-		sys.exit(2) 
 
-	for argument in sys.argv: 
-		if argument == "-r": 
+	if len(sys.argv) == 1:
+		usage()
+		sys.exit(2)
+
+	for argument in sys.argv:
+		if argument == "-r":
 			option_raw = 1
 		elif argument == "-f": 
 			option_format = 1
@@ -86,20 +86,27 @@ def main():
 	  
 	filename_target = os.path.splitext(filename_source)[0] 
 	filename_target = filename_target + '.json'
-	  
-	if not os.path.exists(filename_source) or not os.path.isfile(filename_source) or not os.access(filename_source, os.R_OK): 
-		exitwitherror('Battle Result does not exists!') 
 
-	cachefile = open(filename_source, 'rb') 
-			  
-	try: 
+	if not os.path.exists(filename_source) or not os.path.isfile(filename_source) or not os.access(filename_source, os.R_OK):
+		exitwitherror('Battle Result does not exists!')
+
+	file = open(filename_source, 'rb')
+	bresult = process(file)
+	dumpjson(bresult)
+
+	printmessage('###### Done!', 0)
+	printmessage('', 0)
+	sys.exit(0)
+
+def process(file):
+	try:
 		from SafeUnpickler import SafeUnpickler
-		legacyBattleResultVersion, battleResults = SafeUnpickler.load(cachefile) 
-	except Exception, e: 
-		exitwitherror('Battle Result cannot be read (pickle could not be read) ' + e.message) 
+		legacyBattleResultVersion, battleResults = SafeUnpickler.load(file)
+	except Exception, e:
+		exitwitherror('Battle Result cannot be read (pickle could not be read) ' + e.message)
 
-	if not 'battleResults' in locals(): 
-		exitwitherror('Battle Result cannot be read (battleResults does not exist)') 
+	if not 'battleResults' in locals():
+		exitwitherror('Battle Result cannot be read (battleResults does not exist)')
 
 	# if len(battleResults[1]) in LEGACY_VERSIONS_LENGTH:
 		# parser['battleResultVersion'] = LEGACY_VERSIONS[len(battleResults[1])]
@@ -108,8 +115,8 @@ def main():
 	parser['battleResultVersion'] = 18
 			
 	while parser['battleResultVersion']>0:
-		printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
-		issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion']) 
+		# printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
+		issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion'])
 		if issuccess==0:
 			parser['battleResultVersion'] = parser['battleResultVersion']-1
 		else:
@@ -144,12 +151,8 @@ def main():
 
 	parser['result'] = 'ok'
 	bresult['parser'] = parser
-	
-	dumpjson(bresult) 
+	return bresult
 
-	printmessage('###### Done!', 0) 
-	printmessage('', 0) 
-	sys.exit(0) 
 
 def prepareForJSON(bresult):
 	if 'personal' in bresult:
@@ -248,7 +251,7 @@ def convertToFullForm(compactForm, battleResultVersion):
 	
 	handled = 0
 	import importlib
-	battle_results_data = importlib.import_module('battle_results_shared_' + str(battleResultVersion).zfill(2))
+	battle_results_data = importlib.import_module('.battle_results_shared_' + str(battleResultVersion).zfill(2), 'wot_battle_results_to_json')
 
 	if len(battle_results_data.VEH_FULL_RESULTS)==0:
 		exitwitherror("Unsupported Battle Result Version: " + str(battleResultVersion))
@@ -448,7 +451,7 @@ def getDestroyedDevicesList(detail_values):
   
 def printmessage(logtext, to_log): 
 	import datetime, os 
-
+	# todo make this entire thing work without globals
 	global option_server, filename_source
 
 	if option_server == 0: 
