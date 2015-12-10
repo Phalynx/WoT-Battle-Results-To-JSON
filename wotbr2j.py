@@ -58,7 +58,7 @@ def usage():
   
 def main(): 
 
-    import struct, json, time, sys, os, shutil, datetime
+    import sys, os
     global filename_source, filename_target, option_server, option_format, parser
 
     option_raw = 0
