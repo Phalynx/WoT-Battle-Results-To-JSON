@@ -450,7 +450,7 @@ def getDestroyedDevicesList(detail_values):
 ############################################################################################################################ 
   
 def printmessage(logtext, to_log): 
-    import datetime, os
+    import datetime
     # todo make this entire thing work without globals
     global option_server, filename_source
 
