@@ -58,172 +58,172 @@ def usage():
   
 def main(): 
 
-	import struct, json, time, sys, os, shutil, datetime 
-	global filename_source, filename_target, option_server, option_format, parser
-	
-	option_raw = 0
-	option_format = 0
-	option_server = 0
-	option_frags = 1
+    import struct, json, time, sys, os, shutil, datetime
+    global filename_source, filename_target, option_server, option_format, parser
 
-	if len(sys.argv) == 1:
-		usage()
-		sys.exit(2)
+    option_raw = 0
+    option_format = 0
+    option_server = 0
+    option_frags = 1
 
-	for argument in sys.argv:
-		if argument == "-r":
-			option_raw = 1
-		elif argument == "-f": 
-			option_format = 1
-		elif argument == "-s": 
-			option_server = 1
+    if len(sys.argv) == 1:
+        usage()
+        sys.exit(2)
 
-	filename_source = str(sys.argv[1]) 
+    for argument in sys.argv:
+        if argument == "-r":
+            option_raw = 1
+        elif argument == "-f":
+            option_format = 1
+        elif argument == "-s":
+            option_server = 1
 
-	printmessage('###### WoTBR2J ' + parser['version'], 0) 
+    filename_source = str(sys.argv[1])
 
-	printmessage('Processing ' + filename_source, 0) 
-	  
-	filename_target = os.path.splitext(filename_source)[0] 
-	filename_target = filename_target + '.json'
+    printmessage('###### WoTBR2J ' + parser['version'], 0)
 
-	if not os.path.exists(filename_source) or not os.path.isfile(filename_source) or not os.access(filename_source, os.R_OK):
-		exitwitherror('Battle Result does not exists!')
+    printmessage('Processing ' + filename_source, 0)
 
-	file = open(filename_source, 'rb')
-	bresult = process(file)
-	dumpjson(bresult)
+    filename_target = os.path.splitext(filename_source)[0]
+    filename_target = filename_target + '.json'
 
-	printmessage('###### Done!', 0)
-	printmessage('', 0)
-	sys.exit(0)
+    if not os.path.exists(filename_source) or not os.path.isfile(filename_source) or not os.access(filename_source, os.R_OK):
+        exitwitherror('Battle Result does not exists!')
+
+    file = open(filename_source, 'rb')
+    bresult = process(file)
+    dumpjson(bresult)
+
+    printmessage('###### Done!', 0)
+    printmessage('', 0)
+    sys.exit(0)
 
 def process(file):
-	try:
-		from SafeUnpickler import SafeUnpickler
-		legacyBattleResultVersion, battleResults = SafeUnpickler.load(file)
-	except Exception, e:
-		exitwitherror('Battle Result cannot be read (pickle could not be read) ' + e.message)
+    try:
+        from SafeUnpickler import SafeUnpickler
+        legacyBattleResultVersion, battleResults = SafeUnpickler.load(file)
+    except Exception, e:
+        exitwitherror('Battle Result cannot be read (pickle could not be read) ' + e.message)
 
-	if not 'battleResults' in locals():
-		exitwitherror('Battle Result cannot be read (battleResults does not exist)')
+    if not 'battleResults' in locals():
+        exitwitherror('Battle Result cannot be read (battleResults does not exist)')
 
-	# if len(battleResults[1]) in LEGACY_VERSIONS_LENGTH:
-		# parser['battleResultVersion'] = LEGACY_VERSIONS[len(battleResults[1])]
-	# else:
-	# Updates higher than v0.9.8 have to be identified using a list of new fields
-	parser['battleResultVersion'] = 18
-			
-	while parser['battleResultVersion']>0:
-		# printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
-		issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion'])
-		if issuccess==0:
-			parser['battleResultVersion'] = parser['battleResultVersion']-1
-		else:
-			break
-		
+    # if len(battleResults[1]) in LEGACY_VERSIONS_LENGTH:
+        # parser['battleResultVersion'] = LEGACY_VERSIONS[len(battleResults[1])]
+    # else:
+    # Updates higher than v0.9.8 have to be identified using a list of new fields
+    parser['battleResultVersion'] = 18
 
-	if not 'personal' in bresult:
-		exitwitherror('Battle Result cannot be read (personal does not exist)')
+    while parser['battleResultVersion']>0:
+        # printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
+        issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion'])
+        if issuccess==0:
+            parser['battleResultVersion'] = parser['battleResultVersion']-1
+        else:
+            break
 
-	# 0.9.8 and higher
-	if len(list(bresult['personal'].keys()))<10:
-		for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
-			if 'details' in ownResults:
-				ownResults['details'] = handleDetailsCrits(ownResults['details'])
-				
-			for field in ('damageEventList', 'xpReplay', 'creditsReplay', 'tmenXPReplay', 'fortResourceReplay', 'goldReplay', 'freeXPReplay'):
-				ownResults[field] = None
-				
-			bresult['personal'][vehTypeCompDescr] = ownResults
-			
-	# <0.9.8
-	else:
-		if 'details' in bresult['personal']:
-		  
-			if len(battleResults[1]) < 60: 
-				bresult['personal']['details'] = VehicleInteractionDetails_LEGACY.fromPacked(bresult['personal']['details']).toDict() 
-			else:
-				bresult['personal']['details'] = VehicleInteractionDetails.fromPacked(bresult['personal']['details']).toDict()             
-			
-			bresult['personal']['details'] = handleDetailsCrits(bresult['personal']['details'])
-	
 
-	parser['result'] = 'ok'
-	bresult['parser'] = parser
-	return bresult
+    if not 'personal' in bresult:
+        exitwitherror('Battle Result cannot be read (personal does not exist)')
+
+    # 0.9.8 and higher
+    if len(list(bresult['personal'].keys()))<10:
+        for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
+            if 'details' in ownResults:
+                ownResults['details'] = handleDetailsCrits(ownResults['details'])
+
+            for field in ('damageEventList', 'xpReplay', 'creditsReplay', 'tmenXPReplay', 'fortResourceReplay', 'goldReplay', 'freeXPReplay'):
+                ownResults[field] = None
+
+            bresult['personal'][vehTypeCompDescr] = ownResults
+
+    # <0.9.8
+    else:
+        if 'details' in bresult['personal']:
+
+            if len(battleResults[1]) < 60:
+                bresult['personal']['details'] = VehicleInteractionDetails_LEGACY.fromPacked(bresult['personal']['details']).toDict()
+            else:
+                bresult['personal']['details'] = VehicleInteractionDetails.fromPacked(bresult['personal']['details']).toDict()
+
+            bresult['personal']['details'] = handleDetailsCrits(bresult['personal']['details'])
+
+
+    parser['result'] = 'ok'
+    bresult['parser'] = parser
+    return bresult
 
 
 def prepareForJSON(bresult):
-	if 'personal' in bresult:
+    if 'personal' in bresult:
 
-		if 'club' in bresult['personal']:	
-			if 'clubDossierPopUps' in bresult['personal']['club']:
-				oldClubDossier = bresult['personal']['club']['clubDossierPopUps'].copy()
-				bresult['personal']['club']['clubDossierPopUps'] = dict()
-				for achievement, amount in oldClubDossier.iteritems():
-					bresult['personal']['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
-		
-		if bresult['parser']['battleResultVersion'] >= 15:
-			for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
-				if vehTypeCompDescr == 'avatar':
-					if 'avatarDamageEventList' in bresult['personal'][vehTypeCompDescr]:
-						del bresult['personal'][vehTypeCompDescr]['avatarDamageEventList']
-				if 'club' in ownResults:	
-					if 'clubDossierPopUps' in ownResults['club']:
-						oldClubDossier = ownResults['club']['clubDossierPopUps'].copy()
-						ownResults['club']['clubDossierPopUps'] = dict()
-						for achievement, amount in oldClubDossier.iteritems():
-							bresult['personal'][vehTypeCompDescr]['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
-		
-			if len(bresult['personal'].copy())>1 and len(bresult['personal'].copy())<10 :
-				#printmessage("Version 15 DOUBLE: " + str(bresult['arenaUniqueID']), 1)
-				pass
-			for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
-				if 'details' in ownResults:
-					newdetails = detailsDictToString(ownResults['details'])
-					bresult['personal'][vehTypeCompDescr]['details'] = newdetails
-	
-	return bresult
-			
+        if 'club' in bresult['personal']:
+            if 'clubDossierPopUps' in bresult['personal']['club']:
+                oldClubDossier = bresult['personal']['club']['clubDossierPopUps'].copy()
+                bresult['personal']['club']['clubDossierPopUps'] = dict()
+                for achievement, amount in oldClubDossier.iteritems():
+                    bresult['personal']['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
+
+        if bresult['parser']['battleResultVersion'] >= 15:
+            for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
+                if vehTypeCompDescr == 'avatar':
+                    if 'avatarDamageEventList' in bresult['personal'][vehTypeCompDescr]:
+                        del bresult['personal'][vehTypeCompDescr]['avatarDamageEventList']
+                if 'club' in ownResults:
+                    if 'clubDossierPopUps' in ownResults['club']:
+                        oldClubDossier = ownResults['club']['clubDossierPopUps'].copy()
+                        ownResults['club']['clubDossierPopUps'] = dict()
+                        for achievement, amount in oldClubDossier.iteritems():
+                            bresult['personal'][vehTypeCompDescr]['club']['clubDossierPopUps'][str(list(achievement)[0]) + '-' + str(list(achievement)[1])] = amount
+
+            if len(bresult['personal'].copy())>1 and len(bresult['personal'].copy())<10 :
+                #printmessage("Version 15 DOUBLE: " + str(bresult['arenaUniqueID']), 1)
+                pass
+            for vehTypeCompDescr, ownResults in bresult['personal'].copy().iteritems():
+                if 'details' in ownResults:
+                    newdetails = detailsDictToString(ownResults['details'])
+                    bresult['personal'][vehTypeCompDescr]['details'] = newdetails
+
+    return bresult
+
 def detailsDictToString(mydict):
-	mydictcopy = dict()
-	for key, value in mydict.iteritems():
-		value['vehicleid'] = key[0]
-		value['typeCompDescr'] = key[1]
-		mydictcopy[str(key[0]) + '-' + str(key[1])] = value
+    mydictcopy = dict()
+    for key, value in mydict.iteritems():
+        value['vehicleid'] = key[0]
+        value['typeCompDescr'] = key[1]
+        mydictcopy[str(key[0]) + '-' + str(key[1])] = value
 
-	return mydictcopy
-	
-	
-	
+    return mydictcopy
+
+
+
 def exitwitherror(message): 
-	global parser
-	printmessage(message, 1) 
-	dossierheader = dict() 
-	dossierheader['parser'] = dict() 
-	dossierheader['parser']['result'] = "error"
-	dossierheader['parser']['message'] = message 
-	dumpjson(dossierheader) 
-	sys.exit(1) 
+    global parser
+    printmessage(message, 1)
+    dossierheader = dict()
+    dossierheader['parser'] = dict()
+    dossierheader['parser']['result'] = "error"
+    dossierheader['parser']['message'] = message
+    dumpjson(dossierheader)
+    sys.exit(1)
   
 def dumpjson(bresult): 
-	global option_server, option_format, filename_target
-	bresult = prepareForJSON(bresult)
+    global option_server, option_format, filename_target
+    bresult = prepareForJSON(bresult)
 
-	try:
-		if option_server == 1: 
-			print json.dumps(bresult)    
-		else: 
-			finalfile = open(filename_target, 'w') 
+    try:
+        if option_server == 1:
+            print json.dumps(bresult)
+        else:
+            finalfile = open(filename_target, 'w')
 
-			if option_format == 1: 
-				finalfile.write(json.dumps(bresult, sort_keys=True, indent=4)) 
-			else: 
-				finalfile.write(json.dumps(bresult)) 
-	except Exception, e: 
-		exitwitherror("Exception: " + str(e))
-		
+            if option_format == 1:
+                finalfile.write(json.dumps(bresult, sort_keys=True, indent=4))
+            else:
+                finalfile.write(json.dumps(bresult))
+    except Exception, e:
+        exitwitherror("Exception: " + str(e))
+
       
 def dictToList(indices, d): 
     l = [None] * len(indices) 
@@ -240,232 +240,232 @@ def listToDict(names, l):
   
     return d 
 
-	
+
 def print_array(oarray):
-	print json.dumps(oarray, sort_keys=True, indent=4)
+    print json.dumps(oarray, sort_keys=True, indent=4)
 
 
-	
+
 def convertToFullForm(compactForm, battleResultVersion): 
-	from SafeUnpickler import SafeUnpickler
-	
-	handled = 0
-	import importlib
-	battle_results_data = importlib.import_module('.battle_results_shared_' + str(battleResultVersion).zfill(2), 'wot_battle_results_to_json')
+    from SafeUnpickler import SafeUnpickler
 
-	if len(battle_results_data.VEH_FULL_RESULTS)==0:
-		exitwitherror("Unsupported Battle Result Version: " + str(battleResultVersion))
-	else:
-		if battleResultVersion >= 18:  
-	
-			arenaUniqueID, avatarResults, fullResultsList, pickled = compactForm
-			fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
-			avatarResults = SafeUnpickler.loads(zlib.decompress(avatarResults))
-			personal = {}
-			try:
-				fullForm = {'arenaUniqueID': arenaUniqueID,
-				'personal': personal,
-				'common': {},
-				'players': {},
-				'vehicles': {},
-				'avatars': {}}
-				personal['avatar'] = avatarResults = battle_results_data.AVATAR_FULL_RESULTS.unpack(avatarResults)
-				for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
-					vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
-					vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
-					vehPersonal['isPrematureLeave'] = avatarResults['isPrematureLeave']
-					vehPersonal['fairplayViolations'] = avatarResults['fairplayViolations']
-					vehPersonal['club'] = avatarResults['club']
-					vehPersonal['enemyClub'] = avatarResults['enemyClub']
-				
-				commonAsList, playersAsList, vehiclesAsList, avatarsAsList = SafeUnpickler.loads(zlib.decompress(pickled))
-				fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
-				for accountDBID, playerAsList in playersAsList.iteritems():
-					fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
+    handled = 0
+    import importlib
+    battle_results_data = importlib.import_module('.battle_results_shared_' + str(battleResultVersion).zfill(2), 'wot_battle_results_to_json')
 
-				for accountDBID, avatarAsList in avatarsAsList.iteritems():
-					fullForm['avatars'][accountDBID] = battle_results_data.AVATAR_PUBLIC_RESULTS.unpack(avatarAsList)
+    if len(battle_results_data.VEH_FULL_RESULTS)==0:
+        exitwitherror("Unsupported Battle Result Version: " + str(battleResultVersion))
+    else:
+        if battleResultVersion >= 18:
 
-				for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
-					fullForm['vehicles'][vehicleID] = []
-					for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
-						fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
-			except IndexError, i:
-				return 0, {}
-			except KeyError, i:
-				return 0, {}
-			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
-				
-		if battleResultVersion >= 17:  
+            arenaUniqueID, avatarResults, fullResultsList, pickled = compactForm
+            fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
+            avatarResults = SafeUnpickler.loads(zlib.decompress(avatarResults))
+            personal = {}
+            try:
+                fullForm = {'arenaUniqueID': arenaUniqueID,
+                'personal': personal,
+                'common': {},
+                'players': {},
+                'vehicles': {},
+                'avatars': {}}
+                personal['avatar'] = avatarResults = battle_results_data.AVATAR_FULL_RESULTS.unpack(avatarResults)
+                for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
+                    vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
+                    vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
+                    vehPersonal['isPrematureLeave'] = avatarResults['isPrematureLeave']
+                    vehPersonal['fairplayViolations'] = avatarResults['fairplayViolations']
+                    vehPersonal['club'] = avatarResults['club']
+                    vehPersonal['enemyClub'] = avatarResults['enemyClub']
 
-			arenaUniqueID, avatarResults, fullResultsList, pickled = compactForm
-			fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
-			avatarResults = SafeUnpickler.loads(zlib.decompress(avatarResults))
-			personal = {}
-			try:
-				fullForm = {'arenaUniqueID': arenaUniqueID,
-				'personal': personal,
-				'common': {},
-				'players': {},
-				'vehicles': {},
-				'avatars': {}}
-				personal['avatar'] = avatarResults = battle_results_data.AVATAR_FULL_RESULTS.unpack(avatarResults)
-				for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
-					vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
-					vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
-					vehPersonal['isPrematureLeave'] = avatarResults['isPrematureLeave']
-					vehPersonal['fairplayViolations'] = avatarResults['fairplayViolations']
+                commonAsList, playersAsList, vehiclesAsList, avatarsAsList = SafeUnpickler.loads(zlib.decompress(pickled))
+                fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
+                for accountDBID, playerAsList in playersAsList.iteritems():
+                    fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
 
-				commonAsList, playersAsList, vehiclesAsList, avatarsAsList = SafeUnpickler.loads(zlib.decompress(pickled))
-				fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
-				for accountDBID, playerAsList in playersAsList.iteritems():
-					fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
+                for accountDBID, avatarAsList in avatarsAsList.iteritems():
+                    fullForm['avatars'][accountDBID] = battle_results_data.AVATAR_PUBLIC_RESULTS.unpack(avatarAsList)
 
-				for accountDBID, avatarAsList in avatarsAsList.iteritems():
-					fullForm['avatars'][accountDBID] = battle_results_data.AVATAR_PUBLIC_RESULTS.unpack(avatarAsList)
+                for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
+                    fullForm['vehicles'][vehicleID] = []
+                    for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
+                        fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
+            except IndexError, i:
+                return 0, {}
+            except KeyError, i:
+                return 0, {}
+            except Exception, e:
+                exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
 
-				for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
-					fullForm['vehicles'][vehicleID] = []
-					for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
-						fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
-			except IndexError, i:
-				return 0, {}
-			except KeyError, i:
-				return 0, {}
-			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
-				
-		elif battleResultVersion >= 15:  
+        if battleResultVersion >= 17:
 
-			arenaUniqueID, fullResultsList, pickled, uniqueSubUrl = compactForm
-			fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
-			personal = {}
-			try:
-				fullForm = {'arenaUniqueID': arenaUniqueID,
-					'personal': personal,
-					'common': {},
-					'players': {},
-					'vehicles': {},
-					'uniqueSubUrl': uniqueSubUrl}
-					
-				for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
-					vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
-					
-					vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
-							
-				commonAsList, playersAsList, vehiclesAsList = SafeUnpickler.loads(zlib.decompress(pickled))
-				fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
-				
-				for accountDBID, playerAsList in playersAsList.iteritems():
-					fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
+            arenaUniqueID, avatarResults, fullResultsList, pickled = compactForm
+            fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
+            avatarResults = SafeUnpickler.loads(zlib.decompress(avatarResults))
+            personal = {}
+            try:
+                fullForm = {'arenaUniqueID': arenaUniqueID,
+                'personal': personal,
+                'common': {},
+                'players': {},
+                'vehicles': {},
+                'avatars': {}}
+                personal['avatar'] = avatarResults = battle_results_data.AVATAR_FULL_RESULTS.unpack(avatarResults)
+                for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
+                    vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
+                    vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
+                    vehPersonal['isPrematureLeave'] = avatarResults['isPrematureLeave']
+                    vehPersonal['fairplayViolations'] = avatarResults['fairplayViolations']
 
-				for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
-					fullForm['vehicles'][vehicleID] = []
-					for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
-						fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
-							
-			except IndexError, i:
-				return 0, {}
-			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
-		else:	
-			fullForm = dict()
-			try:
-				fullForm = {'arenaUniqueID': compactForm[0], 
-				 'personal': listToDict(battle_results_data.VEH_FULL_RESULTS, compactForm[1]), 
-				 'common': {}, 
-				 'players': {}, 
-				 'vehicles': {}}
+                commonAsList, playersAsList, vehiclesAsList, avatarsAsList = SafeUnpickler.loads(zlib.decompress(pickled))
+                fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
+                for accountDBID, playerAsList in playersAsList.iteritems():
+                    fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
 
-			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
-		
-			if not 'personal' in fullForm:
-				return fullForm
-				  
-			try:
-				commonAsList, playersAsList, vehiclesAsList = SafeUnpickler.loads(compactForm[2]) 
-			except Exception, e: 
-				exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
-			
-			fullForm['common'] = listToDict(battle_results_data.COMMON_RESULTS, commonAsList) 
-			
-			for accountDBID, playerAsList in playersAsList.iteritems(): 
-				fullForm['players'][accountDBID] = listToDict(battle_results_data.PLAYER_INFO, playerAsList) 
-			  
-			for vehicleID, vehicleAsList in vehiclesAsList.iteritems(): 
-				fullForm['vehicles'][vehicleID] = listToDict(battle_results_data.VEH_PUBLIC_RESULTS, vehicleAsList)
-	  
-	return 1, fullForm 
+                for accountDBID, avatarAsList in avatarsAsList.iteritems():
+                    fullForm['avatars'][accountDBID] = battle_results_data.AVATAR_PUBLIC_RESULTS.unpack(avatarAsList)
+
+                for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
+                    fullForm['vehicles'][vehicleID] = []
+                    for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
+                        fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
+            except IndexError, i:
+                return 0, {}
+            except KeyError, i:
+                return 0, {}
+            except Exception, e:
+                exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
+
+        elif battleResultVersion >= 15:
+
+            arenaUniqueID, fullResultsList, pickled, uniqueSubUrl = compactForm
+            fullResultsList = SafeUnpickler.loads(zlib.decompress(fullResultsList))
+            personal = {}
+            try:
+                fullForm = {'arenaUniqueID': arenaUniqueID,
+                    'personal': personal,
+                    'common': {},
+                    'players': {},
+                    'vehicles': {},
+                    'uniqueSubUrl': uniqueSubUrl}
+
+                for vehTypeCompDescr, ownResults in fullResultsList.iteritems():
+                    vehPersonal = personal[vehTypeCompDescr] = battle_results_data.VEH_FULL_RESULTS.unpack(ownResults)
+
+                    vehPersonal['details'] = battle_results_data.VehicleInteractionDetails.fromPacked(vehPersonal['details']).toDict()
+
+                commonAsList, playersAsList, vehiclesAsList = SafeUnpickler.loads(zlib.decompress(pickled))
+                fullForm['common'] = battle_results_data.COMMON_RESULTS.unpack(commonAsList)
+
+                for accountDBID, playerAsList in playersAsList.iteritems():
+                    fullForm['players'][accountDBID] = battle_results_data.PLAYER_INFO.unpack(playerAsList)
+
+                for vehicleID, vehiclesInfo in vehiclesAsList.iteritems():
+                    fullForm['vehicles'][vehicleID] = []
+                    for vehTypeCompDescr, vehicleInfo in vehiclesInfo.iteritems():
+                        fullForm['vehicles'][vehicleID].append(battle_results_data.VEH_PUBLIC_RESULTS.unpack(vehicleInfo))
+
+            except IndexError, i:
+                return 0, {}
+            except Exception, e:
+                exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
+        else:
+            fullForm = dict()
+            try:
+                fullForm = {'arenaUniqueID': compactForm[0],
+                 'personal': listToDict(battle_results_data.VEH_FULL_RESULTS, compactForm[1]),
+                 'common': {},
+                 'players': {},
+                 'vehicles': {}}
+
+            except Exception, e:
+                exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
+
+            if not 'personal' in fullForm:
+                return fullForm
+
+            try:
+                commonAsList, playersAsList, vehiclesAsList = SafeUnpickler.loads(compactForm[2])
+            except Exception, e:
+                exitwitherror("Error occured while transforming Battle Result Version: " + str(battleResultVersion) + " Error: " + str(e))
+
+            fullForm['common'] = listToDict(battle_results_data.COMMON_RESULTS, commonAsList)
+
+            for accountDBID, playerAsList in playersAsList.iteritems():
+                fullForm['players'][accountDBID] = listToDict(battle_results_data.PLAYER_INFO, playerAsList)
+
+            for vehicleID, vehicleAsList in vehiclesAsList.iteritems():
+                fullForm['vehicles'][vehicleID] = listToDict(battle_results_data.VEH_PUBLIC_RESULTS, vehicleAsList)
+
+    return 1, fullForm
 
 def handleDetailsCrits(details):
 
-	if len(details)>0: 
-		for vehicleid, detail_values in details.items(): 
-			details[vehicleid]['critsDestroyedTankmenList'] = getDestroyedTankmen(detail_values)
-			details[vehicleid]['critsCriticalDevicesList'] = getCriticalDevicesList(detail_values)
-			details[vehicleid]['critsDestroyedDevicesList'] = getDestroyedDevicesList(detail_values)
-			details[vehicleid]['critsCount'] = len(details[vehicleid]['critsDestroyedTankmenList']) + len(details[vehicleid]['critsDestroyedTankmenList']) + len(details[vehicleid]['critsDestroyedTankmenList'])
-	
-	return details
+    if len(details)>0:
+        for vehicleid, detail_values in details.items():
+            details[vehicleid]['critsDestroyedTankmenList'] = getDestroyedTankmen(detail_values)
+            details[vehicleid]['critsCriticalDevicesList'] = getCriticalDevicesList(detail_values)
+            details[vehicleid]['critsDestroyedDevicesList'] = getDestroyedDevicesList(detail_values)
+            details[vehicleid]['critsCount'] = len(details[vehicleid]['critsDestroyedTankmenList']) + len(details[vehicleid]['critsDestroyedTankmenList']) + len(details[vehicleid]['critsDestroyedTankmenList'])
+
+    return details
 
 def getDestroyedTankmen(detail_values):
-	
-	destroyedTankmenList = [] 
-	if detail_values['crits']>0: 
-		destroyedTankmen = detail_values['crits'] >> 24 & 255
-		  
-		for shift in range(len(VEHICLE_TANKMAN_TYPE_NAMES)): 
-			if 1 << shift & destroyedTankmen: 
-				destroyedTankmenList.append(VEHICLE_TANKMAN_TYPE_NAMES[shift]) 
-		
-	return destroyedTankmenList  
+
+    destroyedTankmenList = []
+    if detail_values['crits']>0:
+        destroyedTankmen = detail_values['crits'] >> 24 & 255
+
+        for shift in range(len(VEHICLE_TANKMAN_TYPE_NAMES)):
+            if 1 << shift & destroyedTankmen:
+                destroyedTankmenList.append(VEHICLE_TANKMAN_TYPE_NAMES[shift])
+
+    return destroyedTankmenList
   
 def getCriticalDevicesList(detail_values):
 
-	criticalDevicesList = [] 
-	if detail_values['crits']>0: 
-		criticalDevices = detail_values['crits'] & 4095
-		  
-		for shift in range(len(VEHICLE_DEVICE_TYPE_NAMES)): 
-			if 1 << shift & criticalDevices: 
-				criticalDevicesList.append(VEHICLE_DEVICE_TYPE_NAMES[shift]) 
-		  
-	return criticalDevicesList
+    criticalDevicesList = []
+    if detail_values['crits']>0:
+        criticalDevices = detail_values['crits'] & 4095
 
-		
+        for shift in range(len(VEHICLE_DEVICE_TYPE_NAMES)):
+            if 1 << shift & criticalDevices:
+                criticalDevicesList.append(VEHICLE_DEVICE_TYPE_NAMES[shift])
+
+    return criticalDevicesList
+
+
 def getDestroyedDevicesList(detail_values):
-	destroyedDevicesList = [] 
-	if detail_values['crits']>0: 
-		destroyedDevices = detail_values['crits'] >> 12 & 4095
-		  
-		for shift in range(len(VEHICLE_DEVICE_TYPE_NAMES)): 
-	  
-			if 1 << shift & destroyedDevices: 
-				destroyedDevicesList.append(VEHICLE_DEVICE_TYPE_NAMES[shift]) 
-		
-	return destroyedDevicesList 
+    destroyedDevicesList = []
+    if detail_values['crits']>0:
+        destroyedDevices = detail_values['crits'] >> 12 & 4095
+
+        for shift in range(len(VEHICLE_DEVICE_TYPE_NAMES)):
+
+            if 1 << shift & destroyedDevices:
+                destroyedDevicesList.append(VEHICLE_DEVICE_TYPE_NAMES[shift])
+
+    return destroyedDevicesList
  
 ############################################################################################################################ 
   
 def printmessage(logtext, to_log): 
-	import datetime, os 
-	# todo make this entire thing work without globals
-	global option_server, filename_source
+    import datetime, os
+    # todo make this entire thing work without globals
+    global option_server, filename_source
 
-	if option_server == 0: 
-		print str(logtext)
-		
-	if to_log == 1:
-		now = datetime.datetime.now() 
-		message = str(now.strftime("%Y-%m-%d %H:%M:%S")) + " # WOTBR2J: " + str(logtext) + " # " + str(filename_source) + "\r\n"
+    if option_server == 0:
+        print str(logtext)
 
-		if option_server == 1: 
-			logFile = open("/var/log/wotdc2j/wotdc2j.log", "a+b") 
-			logFile.write(message) 
-			logFile.close() 
-		
+    if to_log == 1:
+        now = datetime.datetime.now()
+        message = str(now.strftime("%Y-%m-%d %H:%M:%S")) + " # WOTBR2J: " + str(logtext) + " # " + str(filename_source) + "\r\n"
+
+        if option_server == 1:
+            logFile = open("/var/log/wotdc2j/wotdc2j.log", "a+b")
+            logFile.write(message)
+            logFile.close()
+
 
 # Pre 98
 class _VehicleInteractionDetailsItem(object): 
