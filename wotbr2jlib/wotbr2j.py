@@ -82,7 +82,7 @@ def main():
         elif argument == "-s":
             option_server = 1
             logger = logging.getLogger()
-            logger.addHandler(logging.FileHandler(filename='wotbr2j.log'))
+            logger.addHandler(logging.FileHandler(filename='wotbr2jlib.log'))
 
     filename_source = str(sys.argv[1])
 
@@ -207,7 +207,7 @@ def detailsDictToString(mydict):
 
 def exitwitherror(message): 
     global parser
-    logging.ERROR(message)
+    logging.error(message)
     dossierheader = dict()
     dossierheader['parser'] = dict()
     dossierheader['parser']['result'] = "error"
@@ -259,7 +259,7 @@ def convertToFullForm(compactForm, battleResultVersion):
 
     handled = 0
     import importlib
-    battle_results_data = importlib.import_module('.battle_results_shared_' + str(battleResultVersion).zfill(2), 'wot_battle_results_to_json')
+    battle_results_data = importlib.import_module('wotbr2jlib.battle_results_shared_' + str(battleResultVersion).zfill(2))
 
     if len(battle_results_data.VEH_FULL_RESULTS)==0:
         exitwitherror("Unsupported Battle Result Version: " + str(battleResultVersion))
