@@ -3,7 +3,10 @@
 # by Phalynx www.vbaddict.net                      # 
 #################################################### 
 import struct, json, time, sys, zlib
-from itertools import izip 
+from itertools import izip
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
 LEGACY_VERSIONS_LENGTH = (50, 52, 60, 62, 68, 70, 74, 81, 84, 92, 117, 90, 89, 91)
 LEGACY_VERSIONS = dict(((value, index+1) for index, value in enumerate(LEGACY_VERSIONS_LENGTH)))
@@ -61,10 +64,10 @@ def main():
     import sys, os
     global filename_source, filename_target, option_server, option_format, parser
 
-    option_raw = 0
+    # option_raw = 0  # not used (yet?)
     option_format = 0
     option_server = 0
-    option_frags = 1
+    # option_frags = 1  # not used (yet?)
 
     if len(sys.argv) == 1:
         usage()
@@ -72,17 +75,20 @@ def main():
 
     for argument in sys.argv:
         if argument == "-r":
-            option_raw = 1
+            # option_raw = 1  # not used (yet?)
+            pass
         elif argument == "-f":
             option_format = 1
         elif argument == "-s":
             option_server = 1
+            logger = logging.getLogger()
+            logger.addHandler(logging.FileHandler(filename='wotbr2j.log'))
 
     filename_source = str(sys.argv[1])
 
-    printmessage('###### WoTBR2J ' + parser['version'], 0)
+    logging.info('###### WoTBR2J ' + parser['version'])
 
-    printmessage('Processing ' + filename_source, 0)
+    logging.info('Processing ' + filename_source)
 
     filename_target = os.path.splitext(filename_source)[0]
     filename_target = filename_target + '.json'
@@ -94,8 +100,7 @@ def main():
     bresult = process(file)
     dumpjson(bresult)
 
-    printmessage('###### Done!', 0)
-    printmessage('', 0)
+    logging.info('###### Done!')
     sys.exit(0)
 
 def process(file):
@@ -115,7 +120,7 @@ def process(file):
     parser['battleResultVersion'] = 18
 
     while parser['battleResultVersion']>0:
-        # printmessage("Processing Version: " + str(parser['battleResultVersion']), 0)
+        logging.info("Processing Version: " + str(parser['battleResultVersion']))
         issuccess, bresult = convertToFullForm(battleResults, parser['battleResultVersion'])
         if issuccess==0:
             parser['battleResultVersion'] = parser['battleResultVersion']-1
@@ -199,7 +204,7 @@ def detailsDictToString(mydict):
 
 def exitwitherror(message): 
     global parser
-    printmessage(message, 1)
+    logging.ERROR(message)
     dossierheader = dict()
     dossierheader['parser'] = dict()
     dossierheader['parser']['result'] = "error"
@@ -213,7 +218,7 @@ def dumpjson(bresult):
 
     try:
         if option_server == 1:
-            print json.dumps(bresult)
+            print(json.dumps(bresult))
         else:
             finalfile = open(filename_target, 'w')
 
@@ -448,24 +453,6 @@ def getDestroyedDevicesList(detail_values):
     return destroyedDevicesList
  
 ############################################################################################################################ 
-  
-def printmessage(logtext, to_log): 
-    import datetime
-    # todo make this entire thing work without globals
-    global option_server, filename_source
-
-    if option_server == 0:
-        print str(logtext)
-
-    if to_log == 1:
-        now = datetime.datetime.now()
-        message = str(now.strftime("%Y-%m-%d %H:%M:%S")) + " # WOTBR2J: " + str(logtext) + " # " + str(filename_source) + "\r\n"
-
-        if option_server == 1:
-            logFile = open("/var/log/wotdc2j/wotdc2j.log", "a+b")
-            logFile.write(message)
-            logFile.close()
-
 
 # Pre 98
 class _VehicleInteractionDetailsItem(object): 
