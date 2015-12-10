@@ -2,7 +2,7 @@
 # World of Tanks Battle Results to JSON            # 
 # by Phalynx www.vbaddict.net                      # 
 #################################################### 
-import struct, json, time, sys, os, zlib
+import struct, json, time, sys, zlib
 from itertools import izip 
 
 LEGACY_VERSIONS_LENGTH = (50, 52, 60, 62, 68, 70, 74, 81, 84, 92, 117, 90, 89, 91)
